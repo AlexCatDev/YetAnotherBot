@@ -69,7 +69,7 @@ namespace YetAnotherBot
 
                 embed.WithDescription(desc);
                 embed.WithColor(Color.Blue);
-                embed.WithFooter("Loaded plugins: " + loadedPlugins.Count);
+                embed.WithFooter("Loaded plugins: " + loadedPlugins.Count +" [Github Link]()");
                 sMsg.Channel.SendMessageAsync("", false, embed.Build());
             });
 

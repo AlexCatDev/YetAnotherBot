@@ -111,7 +111,7 @@ namespace OsuPlugin
             [JsonProperty("rank")]
             public string RankLetter;
             [JsonProperty("pp")]
-            public float PP;
+            public float? PP;
             [JsonProperty("replay_available")]
             public int ReplayAvailable;
         }
