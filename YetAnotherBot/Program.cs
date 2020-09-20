@@ -57,6 +57,9 @@ namespace YetAnotherBot
                 embed.WithTitle("Bot Runtime Info");
                 string desc = "";
 
+
+                desc += "[Github Link](https://github.com/CSharpProgramming/YetAnotherBot)\n";
+
                 desc += $"Runtime: **{runtimeVer}**\n";
                 desc += $"OS: **{RuntimeInformation.OSDescription} {RuntimeInformation.ProcessArchitecture}**\n";
                 desc += $"CPU Cores: **{Environment.ProcessorCount}**\n";
@@ -69,7 +72,7 @@ namespace YetAnotherBot
 
                 embed.WithDescription(desc);
                 embed.WithColor(Color.Blue);
-                embed.WithFooter("Loaded plugins: " + loadedPlugins.Count +" [Github Link]()");
+                embed.WithFooter("Loaded plugins: " + loadedPlugins.Count + "");
                 sMsg.Channel.SendMessageAsync("", false, embed.Build());
             });
 
