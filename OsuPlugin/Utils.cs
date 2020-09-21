@@ -16,6 +16,16 @@ namespace OsuPlugin
 
         private static Dictionary<string, string> cachedBeatmaps = new Dictionary<string, string>();
 
+        public static string ToFriendlyString(this Mods mod)
+        {
+            string output = mod.ToString().Replace(", ", "");
+
+            if (mod.HasFlag(Mods.NC))
+                output = output.Replace("DT", "");
+
+            return output;
+        }
+
         public static string DownloadBeatmap(string beatmapID)
         {
             if (BeatmapCachingEnabled)

@@ -160,7 +160,7 @@ namespace OsuPlugin
                             {
                                 mapCompletion = "";
 
-                                description += $"▸ **{result.SongName} [{result.DifficultyName}]** +{rup.EnabledMods.ToString().Replace(", ", "")} [{stars}★]\n▸ {Utils.GetEmoteForRankLetter(rup.RankLetter)} ▸ **{pp}PP** ({MathF.Round(resultFC.PP, 2)}PP for {MathF.Round(resultFC.Accuracy, 2)}% FC) ▸ {acc}%\n▸ {rup.Score} ▸ {rup.MaxCombo}/{result.MaxCombo} ▸ [{rup.Count300}/{rup.Count100}/{rup.Count50}/{rup.CountMiss}]\n{mapCompletion}";
+                                description += $"▸ **{result.SongName} [{result.DifficultyName}]** +{rup.EnabledMods.ToFriendlyString()} [{stars}★]\n▸ {Utils.GetEmoteForRankLetter(rup.RankLetter)} ▸ **{pp}PP** ({MathF.Round(resultFC.PP, 2)}PP for {MathF.Round(resultFC.Accuracy, 2)}% FC) ▸ {acc}%\n▸ {rup.Score} ▸ {rup.MaxCombo}/{result.MaxCombo} ▸ [{rup.Count300}/{rup.Count100}/{rup.Count50}/{rup.CountMiss}]\n{mapCompletion}";
 
                                 embedBuilder.WithThumbnailUrl(Utils.GetProfileImageUrl(rup.UserID.ToString()));
                                 embedBuilder.WithAuthor($"Recent plays for {userToCheck}", Utils.GetProfileImageUrl(rup.UserID.ToString()));
@@ -261,7 +261,7 @@ namespace OsuPlugin
 
                             EZPPResult result = EZPP.Calculate(map, currentPlay.MaxCombo, currentPlay.Count100, currentPlay.Count50, currentPlay.CountMiss, currentPlay.EnabledMods);
 
-                            description += $"**{bestUserPlays.IndexOf(currentPlay) + 1}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(currentPlay.BeatmapID.ToString())}) **+{currentPlay.EnabledMods.ToString().Replace(", ", "")}** [{Math.Round(result.StarRating, 2)}★]\n";
+                            description += $"**{bestUserPlays.IndexOf(currentPlay) + 1}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(currentPlay.BeatmapID.ToString())}) **+{currentPlay.EnabledMods.ToFriendlyString()}** [{Math.Round(result.StarRating, 2)}★]\n";
                             description += $"▸ {Utils.GetEmoteForRankLetter(currentPlay.RankLetter)} ▸ **{Math.Round(currentPlay.PP, 2)}pp** ▸ {Math.Round(result.Accuracy, 2)}%\n";
                             description += $"▸ {currentPlay.Score} ▸ x{currentPlay.MaxCombo}/{result.MaxCombo} ▸ [{currentPlay.Count300}/{currentPlay.Count100}/{currentPlay.Count50}/{currentPlay.CountMiss}]\n";
                             description += $"▸ Score Set {dateText}\n";
@@ -361,7 +361,7 @@ namespace OsuPlugin
 
                                     EZPPResult result = EZPP.Calculate(map, currentPlay.MaxCombo, currentPlay.Count100, currentPlay.Count50, currentPlay.CountMiss, currentPlay.EnabledMods);
 
-                                    description += $"**{i + 1}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(discordChannelToBeatmap[sMsg.Channel.Id].ToString())}) **+{currentPlay.EnabledMods.ToString().Replace(", ", "")}** [{Math.Round(result.StarRating, 2)}★]\n";
+                                    description += $"**{i + 1}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(discordChannelToBeatmap[sMsg.Channel.Id].ToString())}) **+{currentPlay.EnabledMods.ToFriendlyString()}** [{Math.Round(result.StarRating, 2)}★]\n";
                                     description += $"▸ {Utils.GetEmoteForRankLetter(currentPlay.RankLetter)} ▸ **{Math.Round(result.PP, 2)}pp** ▸ {Math.Round(result.Accuracy, 2)}%\n";
                                     description += $"▸ {currentPlay.Score} ▸ x{currentPlay.MaxCombo}/{result.MaxCombo} ▸ [{currentPlay.Count300}/{currentPlay.Count100}/{currentPlay.Count50}/{currentPlay.CountMiss}]\n";
                                     description += $"▸ Score Set {dateText}\n";
@@ -483,7 +483,7 @@ namespace OsuPlugin
 
                                 EZPPResult result = EZPP.Calculate(map, currentPlay.MaxCombo, currentPlay.Count100, currentPlay.Count50, currentPlay.CountMiss, currentPlay.EnabledMods);
 
-                                description += $"**{i + 1}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(beatmapToCheck.ToString())}) **+{currentPlay.EnabledMods.ToString().Replace(", ", "")}** [{Math.Round(result.StarRating, 2)}★]\n";
+                                description += $"**{i + 1}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(beatmapToCheck.ToString())}) **+{currentPlay.EnabledMods.ToFriendlyString()}** [{Math.Round(result.StarRating, 2)}★]\n";
                                 description += $"▸ {Utils.GetEmoteForRankLetter(currentPlay.RankLetter)} ▸ **{Math.Round(result.PP, 2)}pp** ▸ {Math.Round(result.Accuracy, 2)}%\n";
                                 description += $"▸ {currentPlay.Score} ▸ x{currentPlay.MaxCombo}/{result.MaxCombo} ▸ [{currentPlay.Count300}/{currentPlay.Count100}/{currentPlay.Count50}/{currentPlay.CountMiss}]\n";
                                 description += $"▸ Score Set {dateText}\n";
@@ -615,7 +615,7 @@ namespace OsuPlugin
                                 string tempDescription = "";
 
                                 tempDescription += $"**{count}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(currentBestPlay.BeatmapID.ToString())})\n";
-                                tempDescription += $"▸ {Utils.GetEmoteForRankLetter(currentBestPlay.RankLetter)} ▸ **{Math.Round(currentBestPlay.PP, 2)}pp** ▸ {Math.Round(result.Accuracy, 2)}% **+{currentBestPlay.EnabledMods.ToString().Replace(", ", "")}** [{Math.Round(result.StarRating, 2)}★] ▸ **#{i + 1}**\n";
+                                tempDescription += $"▸ {Utils.GetEmoteForRankLetter(currentBestPlay.RankLetter)} ▸ **{Math.Round(currentBestPlay.PP, 2)}pp** ▸ {Math.Round(result.Accuracy, 2)}% **+{currentBestPlay.EnabledMods.ToFriendlyString()}** [{Math.Round(result.StarRating, 2)}★] ▸ **#{i + 1}**\n";
                                 tempDescription += $"▸ {currentBestPlay.Score} ▸ x{currentBestPlay.MaxCombo}/{currentBestPlay.MaxCombo} ▸ [{currentBestPlay.Count300}/{currentBestPlay.Count100}/{currentBestPlay.Count50}/{currentBestPlay.CountMiss}]\n";
                                 tempDescription += $"▸ Score Set {dateText}\n";
 
@@ -629,7 +629,7 @@ namespace OsuPlugin
 
                                 result = EZPP.Calculate(map, currentBestPlay.MaxCombo, currentBestPlay.Count100, currentBestPlay.Count50, currentBestPlay.CountMiss, currentBestPlay.EnabledMods);
 
-                                tempDescription += $"▸ {Utils.GetEmoteForRankLetter(currentBestPlay.RankLetter)} ▸ **{Math.Round(currentBestPlay.PP, 2)}pp** ▸ {Math.Round(result.Accuracy, 2)}% **+{currentBestPlay.EnabledMods.ToString().Replace(", ", "")}** [{Math.Round(result.StarRating, 2)}★] ▸ **#{index + 1}**\n";
+                                tempDescription += $"▸ {Utils.GetEmoteForRankLetter(currentBestPlay.RankLetter)} ▸ **{Math.Round(currentBestPlay.PP, 2)}pp** ▸ {Math.Round(result.Accuracy, 2)}% **+{currentBestPlay.EnabledMods.ToFriendlyString()}** [{Math.Round(result.StarRating, 2)}★] ▸ **#{index + 1}**\n";
                                 tempDescription += $"▸ {currentBestPlay.Score} ▸ x{currentBestPlay.MaxCombo}/{currentBestPlay.MaxCombo} ▸ [{currentBestPlay.Count300}/{currentBestPlay.Count100}/{currentBestPlay.Count50}/{currentBestPlay.CountMiss}]\n";
                                 tempDescription += $"▸ Score Set {dateText}\n";
 

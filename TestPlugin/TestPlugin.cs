@@ -39,14 +39,17 @@ namespace TestPlugin
                 }
             }
 
-            
+            CommandHandler.AddCommand(">me", (msg, sMsg) => { 
+           
+
+            });
 
             return false;
         }
 
         public void Unloading()
         {
-            
+            CommandHandler.RemoveCommand(">me");
         }
     }
 }
