@@ -1,41 +1,37 @@
 ﻿using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace BotPluginBase
 {
-    public static class CommandHandler
-    {
-        internal class Command
-        {
-            public string CommandString { get; set; }
-            public Action<string, SocketMessage> OnCommand { get; set; }
-        }
+	public static class CommandHandler
+	{
+		internal class Command
+		{
+			public Action<string, SocketMessage> OnCommand { get; set; }
+		}
 
-        private static List<Command> commands = new List<Command>();
+		private static Dictionary<string, Command> commands = new Dictionary<string, Command>();
 
-        public static void Handle(SocketMessage msg)
-        {
-            for (int i = 0; i < commands.Count; i++)
-            {
-                if (msg.Content.ToLower().StartsWith(commands[i].CommandString))
-                {
-                    commands[i].OnCommand?.Invoke(msg.Content.Remove(0, commands[i].CommandString.Length), msg);
-                    break;
-                }
-            }
-        }
+		public static void Handle(SocketMessage msg)
+		{
+			string content = msg.Content.ToLower();
+			string commandString = content.Contains(" ") ? content.Substring(0, content.IndexOf(" ")) : content;
 
-        public static void AddCommand(string commandString, Action<string, SocketMessage> onMessage)
-        {
-            commands.Add(new Command() { CommandString = commandString, OnCommand = onMessage });
-        }
+			if (commands.TryGetValue(commandString, out Command outCommand))
+			{
+				outCommand.OnCommand?.Invoke(msg.Content.Remove(0, commandString.Length), msg);
+			}
+		}
 
-        public static void RemoveCommand(string commandString)
-        {
-            commands.RemoveAll(a=>a.CommandString == commandString);
-        }
-    }
+		public static void AddCommand(string commandString, Action<string, SocketMessage> onMessage)
+		{
+			commands.Add(commandString, new Command() { OnCommand = onMessage });
+		}
+
+		public static void RemoveCommand(string commandString)
+		{
+			commands.Remove(commandString);
+		}
+	}
 }
