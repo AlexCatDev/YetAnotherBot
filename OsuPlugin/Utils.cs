@@ -16,6 +16,13 @@ namespace OsuPlugin
 
         private static Dictionary<string, string> cachedBeatmaps = new Dictionary<string, string>();
 
+        private static Random rng = new Random();
+
+        public static int GetRandomNumber(int min, int max)
+        {
+            return rng.Next(min, max + 1);
+        }
+
         public static string ToFriendlyString(this Mods mod)
         {
             string output = mod.ToString().Replace(", ", "");
@@ -107,7 +114,7 @@ namespace OsuPlugin
         public static string FormatTime(TimeSpan time)
         {
             int statCount = 3;
-            int[] stats = new int[] { (int)(time.Days / 365), 0, time.Days, time.Hours, time.Minutes, time.Seconds < 0 ? 1 : time.Seconds };
+            int[] stats = new int[] { (int)(time.Days / 365), 0, time.Days, time.Hours, time.Minutes, time.Seconds < 1 ? 1 : time.Seconds };
             stats[2] -= stats[0] * 365;
             stats[1] =  stats[2] / 30;
             stats[2] -= stats[1] * 30;
