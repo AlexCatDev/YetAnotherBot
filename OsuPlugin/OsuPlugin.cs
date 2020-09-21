@@ -133,19 +133,24 @@ namespace OsuPlugin
 
                         string temp = "";
 
-                        temp += $"**{count}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(rup.BeatmapID.ToString())}) **+{rup.EnabledMods.ToFriendlyString()}** [{stars}★]\n";
-                        temp += $"▸ {Utils.GetEmoteForRankLetter(rup.RankLetter)} ▸ **{pp}PP** ({ppFC}PP for {accFC}% FC) ▸ {acc}%\n";
-                        temp += $"▸ {rup.Score} ▸ x{rup.MaxCombo}/{result.MaxCombo} ▸ [{rup.Count300}/{rup.Count100}/{rup.Count50}/{rup.CountMiss}]\n";
+                        string mapCompletion = "";
 
                         if (rup.RankLetter == "F")
                         {
                             float total = rup.Count300 + rup.Count100 + rup.Count50 + rup.CountMiss;
+
+                            acc = MathF.Round((300f * rup.Count300 + 100f * rup.Count100 + 50f * rup.Count50) / (300f * total) * 100f, 2);
+
                             float mapCompleted = (total / (result.TotalHitObjects + 1f) * 100f);
                             mapCompleted = MathF.Round(mapCompleted, 2);
 
-                            temp += $"▸ **Map Completion:** {mapCompleted}%\n";
+                            mapCompletion += $"▸ **Map Completion:** {mapCompleted}%\n";
                         }
 
+                        temp += $"**{count}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(rup.BeatmapID.ToString())}) **+{rup.EnabledMods.ToFriendlyString()}** [{stars}★]\n";
+                        temp += $"▸ {Utils.GetEmoteForRankLetter(rup.RankLetter)} ▸ **{pp}PP** ({ppFC}PP for {accFC}% FC) ▸ {acc}%\n";
+                        temp += $"▸ {rup.Score} ▸ x{rup.MaxCombo}/{result.MaxCombo} ▸ [{rup.Count300}/{rup.Count100}/{rup.Count50}/{rup.CountMiss}]\n";
+                        temp += mapCompletion;
                         temp += $"▸ Score set {Utils.FormatTime(DateTime.UtcNow - rup.DateOfPlay)}\n";
 
                         if (!showList)
@@ -166,7 +171,7 @@ namespace OsuPlugin
                     }
 
                     embedBuilder.WithThumbnailUrl(Utils.GetBeatmapImageUrl(beatmapSetID.ToString()));
-                    embedBuilder.WithAuthor($"Recent plays for {userToCheck}", Utils.GetProfileImageUrl(recentUserPlays[0].UserID.ToString()));
+                    embedBuilder.WithAuthor($"Recent Plays for {userToCheck}", Utils.GetProfileImageUrl(recentUserPlays[0].UserID.ToString()));
 
                     embedBuilder.WithDescription(description);
 
@@ -300,76 +305,6 @@ namespace OsuPlugin
                     Logger.Log(ex.StackTrace, LogLevel.Error);
                     sMsg.Channel.SendMessageAsync("uh oh something happend check console");
                 }
-
-                /*
-                try
-                {
-                    if (userToCheck == "")
-                        userToCheck = discordUserToOsuUser[sMsg.Author.Id];
-
-                    EmbedBuilder embedBuilder = new EmbedBuilder();
-                    string description = "";
-                    Console.WriteLine($"getting best plays for '{userToCheck}'");
-
-                    List<OsuAPI.BestPlayResult> bestUserPlays = oApi.GetBestPlays(userToCheck);
-
-                    List<OsuAPI.BestPlayResult> bestRecentUserPlays = new List<OsuAPI.BestPlayResult>(bestUserPlays);
-
-                    OsuAPI.User osuUser = oApi.GetUser(userToCheck).First();
-
-                    if (showRecent)
-                        bestRecentUserPlays.Sort((x, y) => DateTime.Compare(y.DateOfPlay, x.DateOfPlay));
-                    else
-                        bestUserPlays.Sort((x, y) => y.PP.CompareTo(x.PP));
-
-                    if (showRecent)
-                        embedBuilder.WithAuthor($"Top 7 Recent osu! Plays for {userToCheck}", Utils.GetFlagImageUrl(osuUser.Country));
-                    else
-                        embedBuilder.WithAuthor($"Top 7 osu! Plays for {userToCheck}", Utils.GetFlagImageUrl(osuUser.Country));
-
-                    embedBuilder.WithThumbnailUrl(Utils.GetProfileImageUrl(osuUser.ID.ToString()));
-
-                    for (int i = 0; i < 7; i++)
-                    {
-                        OsuAPI.BestPlayResult currentPlay;
-
-                        if (showRecent)
-                        {
-                            currentPlay = bestRecentUserPlays[i];
-                        }
-                        else
-                        {
-                            currentPlay = bestUserPlays[i];
-                        }
-
-                        string dateText = Utils.FormatTime(DateTime.UtcNow - currentPlay.DateOfPlay);
-
-                        string map = Utils.DownloadBeatmap(currentPlay.BeatmapID.ToString());
-
-                        EZPPResult result = EZPP.Calculate(map, currentPlay.MaxCombo, currentPlay.Count100, currentPlay.Count50, currentPlay.CountMiss, currentPlay.EnabledMods);
-
-                        description += $"**{bestUserPlays.IndexOf(currentPlay) + 1}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(currentPlay.BeatmapID.ToString())}) **+{currentPlay.EnabledMods.ToFriendlyString()}** [{Math.Round(result.StarRating, 2)}★]\n";
-                        description += $"▸ {Utils.GetEmoteForRankLetter(currentPlay.RankLetter)} ▸ **{Math.Round(currentPlay.PP, 2)}pp** ▸ {Math.Round(result.Accuracy, 2)}%\n";
-                        description += $"▸ {currentPlay.Score} ▸ x{currentPlay.MaxCombo}/{result.MaxCombo} ▸ [{currentPlay.Count300}/{currentPlay.Count100}/{currentPlay.Count50}/{currentPlay.CountMiss}]\n";
-                        description += $"▸ Score Set {dateText}\n";
-                    }
-
-                    embedBuilder.WithDescription(description);
-
-                    sMsg.Channel.SendMessageAsync("", false, embedBuilder.Build());
-
-                    if (showRecent)
-                        discordChannelToBeatmapTop.LazyAdd(sMsg.Channel.Id, bestRecentUserPlays.GetRange(0, 7));
-                    else
-                        discordChannelToBeatmapTop.LazyAdd(sMsg.Channel.Id, bestUserPlays.GetRange(0, 7));
-                }
-                catch (Exception ex)
-                {
-                    Logger.Log(ex.Message, LogLevel.Warning);
-                    Logger.Log(ex.StackTrace, LogLevel.Error);
-                    sMsg.Channel.SendMessageAsync("uh oh something happend check console");
-                }
-                */
             });
 
             CommandHandler.AddCommand(">set", (msg, sMsg) =>

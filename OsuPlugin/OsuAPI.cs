@@ -37,7 +37,7 @@ namespace OsuPlugin
         {
             using (WebClient wc = new WebClient())
             {
-                string json = wc.DownloadString($"https://osu.ppy.sh/api/get_user_best?k={apiKey}&u={username}&m=0&limit=100&type=string");
+                string json = wc.DownloadString($"https://osu.ppy.sh/api/get_user_best?k={apiKey}&u={username}&m=0&limit=20&type=string");
                 return JsonConvert.DeserializeObject<List<BestPlayResult>>(json);
             }
         }

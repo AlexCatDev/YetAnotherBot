@@ -50,7 +50,7 @@ namespace OsuPlugin
         private static extern int ezpp_nobjects(IntPtr ez);
 
         [DllImport(@"oppai.dll")]
-        private static extern void ezpp_set_autocalc(IntPtr ez, int value);
+        private static extern void ezpp_set_accuracy_percent(IntPtr ez, float accuracy_percent);
 
         private static IntPtr ezppInstance;
         private static object ezppLock = new object();
@@ -69,6 +69,52 @@ namespace OsuPlugin
 
                 //give 100's and 50's to ezpp
                 ezpp_set_accuracy(ezppInstance, n100, n50);
+
+                //give misscount to ezpp
+                ezpp_set_nmiss(ezppInstance, nMisses);
+
+                //give max combo to ezpp
+                ezpp_set_combo(ezppInstance, maxCombo);
+
+                //give a duplicate of map data to ezpp, so it can calculate above values ^^
+                ezpp_data_dup(ezppInstance, mapData, mapData.Length);
+
+                //Calculate pp first
+                result.PP = ezpp_pp(ezppInstance);
+
+                result.StarRating = ezpp_stars(ezppInstance);
+
+                result.Accuracy = ezpp_accuracy_percent(ezppInstance);
+
+                result.MaxCombo = ezpp_max_combo(ezppInstance);
+
+                result.TotalHitObjects = ezpp_nobjects(ezppInstance);
+
+                result.DifficultyName = ConvertUnsafeCString(ezpp_version(ezppInstance));
+
+                result.SongName = ConvertUnsafeCString(ezpp_title(ezppInstance));
+
+                //Destroy ezpp
+                ezpp_free(ezppInstance);
+
+                return result;
+            }
+        }
+
+        public static EZPPResult Calculate(string mapData, int maxCombo, float accuracy, int nMisses, Mods mods)
+        {
+            lock (ezppLock)
+            {
+                //Create ezpp instance
+                ezppInstance = ezpp_new();
+
+                EZPPResult result = new EZPPResult();
+
+                //give mods to ezpp
+                ezpp_set_mods(ezppInstance, (int)mods);
+
+                //give accuracy_percentage to ezpp
+                ezpp_set_accuracy_percent(ezppInstance, accuracy);
 
                 //give misscount to ezpp
                 ezpp_set_nmiss(ezppInstance, nMisses);
