@@ -46,7 +46,7 @@ namespace OsuPlugin
 
                 Stopwatch sw = Stopwatch.StartNew();
 
-                int count = 1;
+                bool showList = false;
 
                 string userToCheck = "";
 
@@ -56,13 +56,13 @@ namespace OsuPlugin
                     userToCheck = user[1];
 
                     if (user[2].ToLower() == "-l")
-                        count = 5;
+                        showList = true;
 
                 }
                 else if (user.Length > 1)
                 {
                     if (user[1].ToLower() == "-l")
-                        count = 5;
+                        showList = true;
                     else
                         userToCheck = user[1];
                 }
@@ -76,9 +76,9 @@ namespace OsuPlugin
 
                         EmbedBuilder embedBuilder = new EmbedBuilder();
                         string description = "";
-                        Console.WriteLine($"getting recent plays for '{userToCheck}' count: " + count);
+                        Console.WriteLine($"getting recent plays for '{userToCheck}'");
 
-                        List<OsuAPI.RecentPlayResult> recentUserPlays = oApi.GetRecentPlays(userToCheck, count);
+                        List<OsuAPI.RecentPlayResult> recentUserPlays = oApi.GetRecentPlays(userToCheck, 100);
 
                         if (recentUserPlays.Count == 0)
                         {
@@ -86,16 +86,22 @@ namespace OsuPlugin
                             return;
                         }
 
+                        if (discordChannelToBeatmap.ContainsKey(sMsg.Channel.Id))
+                        {
+                            discordChannelToBeatmap[sMsg.Channel.Id] = recentUserPlays[0].BeatmapID;
+                        }
+                        else
+                        {
+                            discordChannelToBeatmap.Add(sMsg.Channel.Id, recentUserPlays[0].BeatmapID);
+                        }
+
+                        int count = 0;
+
                         foreach (var rup in recentUserPlays)
                         {
-                            if (discordChannelToBeatmap.ContainsKey(sMsg.Channel.Id))
-                            {
-                                discordChannelToBeatmap[sMsg.Channel.Id] = rup.BeatmapID;
-                            }
-                            else
-                            {
-                                discordChannelToBeatmap.Add(sMsg.Channel.Id, rup.BeatmapID);
-                            }
+                            count++;
+
+                            string temp = "";
 
                             EZPPResult result;
 
@@ -138,36 +144,38 @@ namespace OsuPlugin
                                 acc = MathF.Round((50f * rup.Count50 + 100f * rup.Count100 + 300f * rup.Count300) / (300f * total) * 100f, 2);
                             }
 
+                            temp += $"**{count}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(rup.BeatmapID.ToString())}) **+{rup.EnabledMods.ToFriendlyString()}** [{stars}★]\n▸ {Utils.GetEmoteForRankLetter(rup.RankLetter)} ▸ **{pp}PP** ({MathF.Round(resultFC.PP, 2)}PP for {MathF.Round(resultFC.Accuracy, 2)}% FC) ▸ {acc}%\n▸ {rup.Score} ▸ {rup.MaxCombo}/{result.MaxCombo} ▸ [{rup.Count300}/{rup.Count100}/{rup.Count50}/{rup.CountMiss}]\n{mapCompletion}";
+                            string dateText = Utils.FormatTime(DateTime.UtcNow - rup.DateOfPlay);
+                            temp += $"▸ Score set {dateText}\n";
 
-                            if (count == 1)
+                            if (!showList)
                             {
-                                embedBuilder.WithAuthor($"{result.SongName} [{result.DifficultyName}]" +
-                                    $" +{rup.EnabledMods.ToString().Replace(", ", "")}" +
-                                    $" [{stars}★]", Utils.GetProfileImageUrl(rup.UserID.ToString()));
+                                description += temp;
+                                embedBuilder.WithThumbnailUrl(Utils.GetProfileImageUrl(rup.UserID.ToString()));
+                                embedBuilder.WithAuthor($"Recent plays for {userToCheck}", Utils.GetProfileImageUrl(rup.UserID.ToString()));
+                                break;
+                            }
 
-                                embedBuilder.WithThumbnailUrl(Utils.GetBeatmapImageUrl(beatmapSetID.ToString()));
-
-                                string footerText = Utils.FormatTime(DateTime.UtcNow - rup.DateOfPlay);
-                                sw.Stop();
-
-                                double time = ((double)sw.ElapsedTicks / Stopwatch.Frequency) * 1000.0;
-
-                                embedBuilder.WithFooter(footerText + $" [{Math.Round(time, 2)} MS]");
-
-                                description += $"▸ {Utils.GetEmoteForRankLetter(rup.RankLetter)} ▸ **{pp}PP** ({MathF.Round(resultFC.PP, 2)}PP for {MathF.Round(resultFC.Accuracy, 2)}% FC) ▸ {acc}%\n▸ {rup.Score} ▸ {rup.MaxCombo}/{result.MaxCombo} ▸ [{rup.Count300}/{rup.Count100}/{rup.Count50}/{rup.CountMiss}]\n{mapCompletion}\n";
+                            if (temp.Length + description.Length < 2048)
+                            {
+                                description += temp;
                             }
                             else
                             {
-                                mapCompletion = "";
-
-                                description += $"▸ **{result.SongName} [{result.DifficultyName}]** +{rup.EnabledMods.ToFriendlyString()} [{stars}★]\n▸ {Utils.GetEmoteForRankLetter(rup.RankLetter)} ▸ **{pp}PP** ({MathF.Round(resultFC.PP, 2)}PP for {MathF.Round(resultFC.Accuracy, 2)}% FC) ▸ {acc}%\n▸ {rup.Score} ▸ {rup.MaxCombo}/{result.MaxCombo} ▸ [{rup.Count300}/{rup.Count100}/{rup.Count50}/{rup.CountMiss}]\n{mapCompletion}";
-
-                                embedBuilder.WithThumbnailUrl(Utils.GetProfileImageUrl(rup.UserID.ToString()));
-                                embedBuilder.WithAuthor($"Recent plays for {userToCheck}", Utils.GetProfileImageUrl(rup.UserID.ToString()));
+                                break;
                             }
+
+                            if (!showList)
+                                break;
                         }
+
+                        embedBuilder.WithThumbnailUrl(Utils.GetProfileImageUrl(recentUserPlays[0].UserID.ToString()));
+                        embedBuilder.WithAuthor($"Recent plays for {userToCheck}", Utils.GetProfileImageUrl(recentUserPlays[0].UserID.ToString()));
+
                         embedBuilder.WithDescription(description);
+
                         embedBuilder.WithColor(new Color(255, 255, 255));
+                        embedBuilder.WithFooter("Plays shown: " + count);
                         sMsg.Channel.SendMessageAsync("", false, embedBuilder.Build());
                     }
                     catch (Exception ex)

@@ -86,13 +86,13 @@ namespace OsuPlugin
 
                 result.Accuracy = ezpp_accuracy_percent(ezppInstance);
 
-                result.DifficultyName = ConvertUnsafeCString(ezpp_version(ezppInstance));
-
-                result.SongName = ConvertUnsafeCString(ezpp_title(ezppInstance));
-
                 result.MaxCombo = ezpp_max_combo(ezppInstance);
 
                 result.TotalHitObjects = ezpp_nobjects(ezppInstance);
+
+                result.DifficultyName = ConvertUnsafeCString(ezpp_version(ezppInstance));
+
+                result.SongName = ConvertUnsafeCString(ezpp_title(ezppInstance));
 
                 //Destroy ezpp
                 ezpp_free(ezppInstance);
