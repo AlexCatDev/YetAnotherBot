@@ -689,7 +689,6 @@ namespace OsuPlugin
             //Optimized
             CommandHandler.AddCommand(">api", (msg, sMsg) =>
             {
-
                 EmbedBuilder embedBuilder = new EmbedBuilder();
 
                 embedBuilder.WithAuthor($"osu!API");
