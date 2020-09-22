@@ -656,7 +656,7 @@ namespace OsuPlugin
                             tempDescription += $"▸ {currentBestPlay.Score} ▸ x{currentBestPlay.MaxCombo}/{currentBestPlay.MaxCombo} ▸ [{currentBestPlay.Count300}/{currentBestPlay.Count100}/{currentBestPlay.Count50}/{currentBestPlay.CountMiss}]\n";
                             tempDescription += $"▸ Score Set {dateText}\n";
 
-                            tempDescription += " \n";
+                            tempDescription += "\n";
 
                             if (description.Length + tempDescription.Length < 2048)
                             {
@@ -667,7 +667,6 @@ namespace OsuPlugin
                                 break;
                             }
                         }
-
                     }
 
                     embedBuilder.WithDescription(description);
