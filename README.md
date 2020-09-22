@@ -13,7 +13,8 @@ OwO (The extremely popular osu! bot) Rewritten and copied from scratch in C#. Wh
 ![Image](https://cdn.discordapp.com/attachments/594840664798265345/757759429641764914/unknown.png)
   
 ">match <user>" //Match your osu profile with someone elses<br/>
-  
+![Image](https://cdn.discordapp.com/attachments/594840664798265345/757762454972399655/unknown.png)
+
 ">osu" //shows your osu profile<br/>
 ![Image](https://cdn.discordapp.com/attachments/594840664798265345/757759865702580344/unknown.png)
 
