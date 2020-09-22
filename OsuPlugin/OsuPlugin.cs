@@ -708,7 +708,6 @@ namespace OsuPlugin
         public void Unloading()
         {
             CommandHandler.RemoveCommand(">api");
-
             CommandHandler.RemoveCommand(">rs");
             CommandHandler.RemoveCommand(">top");
             CommandHandler.RemoveCommand(">set");
