@@ -10,6 +10,8 @@ namespace OsuPlugin
     {
         private string apiKey;
 
+        public int TotalAPICalls = 0;
+
         public OsuAPI(string apiKey)
         {
             this.apiKey = apiKey;
@@ -19,6 +21,7 @@ namespace OsuPlugin
         {
             using (WebClient wc = new WebClient())
             {
+                TotalAPICalls++;
                 string json = wc.DownloadString($"https://osu.ppy.sh/api/get_user_recent?k={apiKey}&u={username}&m=0&limit={limit}&type=string");
                 return JsonConvert.DeserializeObject<List<RecentPlayResult>>(json);
             }
@@ -28,6 +31,7 @@ namespace OsuPlugin
         {
             using (WebClient wc = new WebClient())
             {
+                TotalAPICalls++;
                 string json = wc.DownloadString($"https://osu.ppy.sh/api/get_user?k={apiKey}&u={username}&m=0&type=string");
                 return JsonConvert.DeserializeObject<List<User>>(json);
             }
@@ -37,6 +41,7 @@ namespace OsuPlugin
         {
             using (WebClient wc = new WebClient())
             {
+                TotalAPICalls++;
                 string json = wc.DownloadString($"https://osu.ppy.sh/api/get_user_best?k={apiKey}&u={username}&m=0&limit=100&type=string");
                 return JsonConvert.DeserializeObject<List<BestPlayResult>>(json);
             }
