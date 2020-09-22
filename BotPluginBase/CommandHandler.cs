@@ -8,13 +8,18 @@ namespace BotPluginBase
 {
     public static class CommandHandler
     {
-        internal class Command
+        public class Command
         {
+            public string Description { get; set; } = "null";
             public string CommandString { get; set; }
             public Action<string, SocketMessage> OnCommand { get; set; }
         }
 
         private static List<Command> commands = new List<Command>();
+
+        public static int ActiveCommands => commands.Count;
+
+        public static IReadOnlyList<Command> Commands => commands.AsReadOnly();
 
         public static void Handle(SocketMessage msg)
         {
