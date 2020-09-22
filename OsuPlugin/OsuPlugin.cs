@@ -35,9 +35,13 @@ namespace OsuPlugin
 
             if (File.Exists("./OsuUsers"))
             {
-                discordUserToOsuUser = JsonConvert.DeserializeObject<Dictionary<ulong, string>>(File.ReadAllText("./osuUsers"));
+                discordUserToOsuUser = JsonConvert.DeserializeObject<Dictionary<ulong, string>>(File.ReadAllText("./OsuUsers"));
 
-                Console.WriteLine("Loaded: " + discordUserToOsuUser.Count + " users");
+                Logger.Log($"Added: {discordUserToOsuUser.Count} osu! users to the dictionary", LogLevel.Info);
+            }
+            else
+            {
+                Logger.Log($"Couldn't find a OsuUsers file!", LogLevel.Warning);
             }
 
             //Optimized
@@ -682,6 +686,19 @@ namespace OsuPlugin
                 }
             });
 
+            //Optimized
+            CommandHandler.AddCommand(">api", (msg, sMsg) =>
+            {
+
+                EmbedBuilder embedBuilder = new EmbedBuilder();
+
+                embedBuilder.WithAuthor($"osu!API");
+
+                embedBuilder.Description = $"Total API Calls {oApi.TotalAPICalls}";
+
+
+                sMsg.Channel.SendMessageAsync("", false, embedBuilder.Build());
+            });
         }
 
         public bool HandleMessage(SocketMessage msg, DiscordSocketClient client)
@@ -691,6 +708,8 @@ namespace OsuPlugin
 
         public void Unloading()
         {
+            CommandHandler.RemoveCommand(">api");
+
             CommandHandler.RemoveCommand(">rs");
             CommandHandler.RemoveCommand(">top");
             CommandHandler.RemoveCommand(">set");
