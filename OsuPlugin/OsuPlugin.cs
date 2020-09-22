@@ -685,7 +685,7 @@ namespace OsuPlugin
 
         }
 
-        public bool HandleMessage(SocketMessage msg)
+        public bool HandleMessage(SocketMessage msg, DiscordSocketClient client)
         {
             return false;
         }

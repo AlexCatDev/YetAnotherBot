@@ -100,7 +100,7 @@ namespace YetAnotherBot
                     try
                     {
 
-                        if (loadedPlugins[i].HandleMessage(s))
+                        if (loadedPlugins[i].HandleMessage(s, client))
                             break;
                     }
                     catch (Exception ex)

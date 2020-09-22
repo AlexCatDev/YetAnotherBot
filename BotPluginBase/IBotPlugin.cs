@@ -1,4 +1,5 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
+using Discord.WebSocket;
 using System;
 
 namespace BotPluginBase
@@ -8,7 +9,7 @@ namespace BotPluginBase
         string PluginName { get; }
         string PluginDescription { get; }
 
-        bool HandleMessage(SocketMessage msg);
+        bool HandleMessage(SocketMessage msg, DiscordSocketClient client);
 
         void Unloading();
     }
