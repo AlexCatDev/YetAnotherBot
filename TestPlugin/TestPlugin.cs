@@ -14,10 +14,7 @@ namespace TestPlugin
 
         public TestPlugin()
         {
-            CommandHandler.AddCommand("k!unban", (msg, sMsg) => {
 
-
-            });
         }
 
         public bool HandleMessage(SocketMessage msg, DiscordSocketClient client)
@@ -28,22 +25,7 @@ namespace TestPlugin
             }
 
             string[] args = msg.Content.Split(' ');
-            client.GetGuild()
-            /*
-            if (args[0].ToLower() == "k!unban")
-            {
-                if (args.Length > 1)
-                {
-                    try
-                    {
-                        client.Guilds.Where((x)=>x.Channels.Any(y=>y.Id == msg.Channel.Id)).First().RemoveBanAsync(ulong.Parse(args[1]));
-                        msg.Channel.SendMessageAsync("Unbanned that user lol");
-                    }
-                    catch { msg.Channel.SendMessageAsync("Sorry mate couldnt unban"); }
-                    return true;
-                }
-            }
-            */
+
             if(args[0].ToLower() == "hi")
             {
                 msg.Channel.SendMessageAsync("Hi!");
@@ -74,7 +56,7 @@ namespace TestPlugin
 
         public void Unloading()
         {
-            CommandHandler.RemoveCommand(">k!unban");
+
         }
     }
 }
