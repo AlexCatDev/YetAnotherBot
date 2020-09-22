@@ -5,10 +5,10 @@ OwO (The extremely popular osu! bot) Rewritten and copied from scratch in C#. Wh
 I haven't implemented tracking and idk if i will 
 also this bot has chinese knockoff vibes
 
->rs || >rs -l, -l means show as many recent plays as discord allows
->top || top -r, -r means show your most recent top plays, both commands returns as many plays as discord allows
->flex <indexTop> // >c but for >top
->c //compare your scores with the most recent play in the channel
->match <user> //Match your osu profile with someone elses
->osu //shows your osu profile
->set <username> //make it so the bot knows what your osu username is
+">rs <user>" || ">rs" || ">rs -l", -l means show as many recent of your or someones elses plays as discord allows
+">top" || "top -r", -r means show your most recent top plays, both commands returns as many plays as discord allows
+">flex <indexTop>" // >c but for >top
+">c" || ">c <user>"//compare your scores or someone elses scores with the most recent play in the channel
+">match <user>" //Match your osu profile with someone elses
+">osu" //shows your osu profile
+">set <username>" //make it so the bot knows what your osu username is
