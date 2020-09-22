@@ -44,6 +44,8 @@ namespace YetAnotherBot
                 Logger.Log($"Error solving plugin: {e.Exception.Message} STACKTRACE: {e.Exception.StackTrace}", LogLevel.Error);
             };
 
+            pluginResolver.ResolvePlugins("./Plugins/", null);
+
             DiscordSocketClient client = new DiscordSocketClient();
 
             bool signalKill = false;
@@ -65,6 +67,7 @@ namespace YetAnotherBot
                 desc += $"CPU Cores: **{Environment.ProcessorCount}**\n";
                 desc += "Oppai Version: **3.3.0-b237**\n";
                 desc += $"Ping: **{client.Latency} MS**\n";
+                desc += $"Shard ID: **{client.ShardId}**\n";
                 for (int i = 0; i < loadedPlugins.Count; i++)
                 {
                     desc += $"Plugin {i+1}: **{loadedPlugins[i].PluginName}** : *{loadedPlugins[i].PluginDescription}*\n";
@@ -72,7 +75,7 @@ namespace YetAnotherBot
 
                 embed.WithDescription(desc);
                 embed.WithColor(Color.Blue);
-                embed.WithFooter("Loaded plugins: " + loadedPlugins.Count + "");
+                embed.WithFooter($"Loaded plugins: {loadedPlugins.Count} Active commands: {CommandHandler.ActiveCommands}");
                 sMsg.Channel.SendMessageAsync("", false, embed.Build());
             });
 
@@ -86,6 +89,26 @@ namespace YetAnotherBot
                 loadedPlugins.Clear();
                 pluginResolver.ResolvePlugins("./Plugins/", null);
                 sMsg.Channel.SendMessageAsync($"Done, loaded: {loadedPlugins.Count} plugins");
+            });
+
+            CommandHandler.AddCommand(">help", (msg, sMsg) =>
+            {
+                string desc = "";
+
+                EmbedBuilder eb = new EmbedBuilder();
+                eb.WithAuthor("Commands available");
+
+                for (int i = 0; i < CommandHandler.Commands.Count; i++)
+                {
+                    var currentCommand = CommandHandler.Commands[i];
+
+                    desc += $"**{i+1}.** {currentCommand.CommandString}\n";
+                    desc += $"Description: **{currentCommand.Description}**\n";
+                }
+
+                eb.WithDescription(desc);
+                eb.WithColor(Color.Green);
+                sMsg.Channel.SendMessageAsync("",false, eb.Build());
             });
 
             client.MessageReceived += (s) =>
@@ -117,7 +140,6 @@ namespace YetAnotherBot
             client.Ready += () =>
             {
                 Logger.Log("Hello logged in as " + client.CurrentUser.Username + " ready to serve!", LogLevel.Success);
-                pluginResolver.ResolvePlugins("./Plugins/", null);
                 return Task.Delay(0);
             };
 
