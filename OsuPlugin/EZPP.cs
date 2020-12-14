@@ -50,6 +50,21 @@ namespace OsuPlugin
         private static extern int ezpp_nobjects(IntPtr ez);
 
         [DllImport(@"oppai.dll")]
+        private static extern float ezpp_ar(IntPtr ez);
+
+        [DllImport(@"oppai.dll")]
+        private static extern float ezpp_cs(IntPtr ez);
+
+        [DllImport(@"oppai.dll")]
+        private static extern float ezpp_od(IntPtr ez);
+
+        [DllImport(@"oppai.dll")]
+        private static extern float ezpp_hp(IntPtr ez);
+
+        [DllImport(@"oppai.dll")]
+        private static extern float ezpp_timing_ms_per_beat(IntPtr ez, int i);
+
+        [DllImport(@"oppai.dll")]
         private static extern void ezpp_set_accuracy_percent(IntPtr ez, float accuracy_percent);
 
         private static IntPtr ezppInstance;
@@ -80,11 +95,11 @@ namespace OsuPlugin
                 ezpp_data_dup(ezppInstance, mapData, mapData.Length);
 
                 //Calculate pp first
-                result.PP = ezpp_pp(ezppInstance);
+                result.PP = MathF.Round(ezpp_pp(ezppInstance), 2);
 
-                result.StarRating = ezpp_stars(ezppInstance);
+                result.StarRating = MathF.Round(ezpp_stars(ezppInstance), 2);
 
-                result.Accuracy = ezpp_accuracy_percent(ezppInstance);
+                result.Accuracy = MathF.Round(ezpp_accuracy_percent(ezppInstance), 2);
 
                 result.MaxCombo = ezpp_max_combo(ezppInstance);
 
@@ -93,6 +108,16 @@ namespace OsuPlugin
                 result.DifficultyName = ConvertUnsafeCString(ezpp_version(ezppInstance));
 
                 result.SongName = ConvertUnsafeCString(ezpp_title(ezppInstance));
+
+                result.AR = MathF.Round(ezpp_ar(ezppInstance), 1);
+                result.CS = MathF.Round(ezpp_cs(ezppInstance), 1);
+                result.HP = MathF.Round(ezpp_hp(ezppInstance), 1);
+                result.OD = MathF.Round(ezpp_od(ezppInstance), 1);
+                //Get the MS Per beat for the first object of the map
+                result.BPM = MathF.Round(60000f / ezpp_timing_ms_per_beat(ezppInstance, 0), 2);
+
+                if (mods.HasFlag(Mods.DT))
+                    result.BPM = MathF.Ceiling(result.BPM * 1.5f);
 
                 //Destroy ezpp
                 ezpp_free(ezppInstance);
@@ -140,6 +165,13 @@ namespace OsuPlugin
 
                 result.SongName = ConvertUnsafeCString(ezpp_title(ezppInstance));
 
+                result.AR = ezpp_ar(ezppInstance);
+                result.CS = ezpp_cs(ezppInstance);
+                result.HP = ezpp_hp(ezppInstance);
+                result.OD = ezpp_od(ezppInstance);
+                //Get the MS Per beat for the first object of the map
+                result.BPM = MathF.Round(ezpp_timing_ms_per_beat(ezppInstance, 0) * 0.06f, 2);
+
                 //Destroy ezpp
                 ezpp_free(ezppInstance);
 
@@ -170,6 +202,13 @@ namespace OsuPlugin
 
     public class EZPPResult
     {
+        public float AR;
+        public float OD;
+        public float HP;
+        public float CS;
+
+        public float BPM;
+
         public float StarRating;
         public float Accuracy;
         public float PP;

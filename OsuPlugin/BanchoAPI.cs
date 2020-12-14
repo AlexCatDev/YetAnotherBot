@@ -6,57 +6,57 @@ using System.Text;
 
 namespace OsuPlugin
 {
-    public class OsuAPI
+    public class BanchoAPI
     {
         private string apiKey;
 
         public int TotalAPICalls = 0;
 
-        public OsuAPI(string apiKey)
+        public BanchoAPI(string apiKey)
         {
             this.apiKey = apiKey;
         }
 
-        public List<RecentPlayResult> GetRecentPlays(string username, int limit = 1)
+        public List<BanchoRecentScore> GetRecentPlays(string username, int limit = 1)
         {
             using (WebClient wc = new WebClient())
             {
                 TotalAPICalls++;
                 string json = wc.DownloadString($"https://osu.ppy.sh/api/get_user_recent?k={apiKey}&u={username}&m=0&limit={limit}&type=string");
-                return JsonConvert.DeserializeObject<List<RecentPlayResult>>(json);
+                return JsonConvert.DeserializeObject<List<BanchoRecentScore>>(json);
             }
         }
 
-        public List<User> GetUser(string username)
+        public List<BanchoUser> GetUser(string username)
         {
             using (WebClient wc = new WebClient())
             {
                 TotalAPICalls++;
                 string json = wc.DownloadString($"https://osu.ppy.sh/api/get_user?k={apiKey}&u={username}&m=0&type=string");
-                return JsonConvert.DeserializeObject<List<User>>(json);
+                return JsonConvert.DeserializeObject<List<BanchoUser>>(json);
             }
         }
 
-        public List<BestPlayResult> GetBestPlays(string username)
+        public List<BanchoBestScore> GetBestPlays(string username)
         {
             using (WebClient wc = new WebClient())
             {
                 TotalAPICalls++;
                 string json = wc.DownloadString($"https://osu.ppy.sh/api/get_user_best?k={apiKey}&u={username}&m=0&limit=100&type=string");
-                return JsonConvert.DeserializeObject<List<BestPlayResult>>(json);
+                return JsonConvert.DeserializeObject<List<BanchoBestScore>>(json);
             }
         }
 
-        public List<ScoreResult> GetScores(string username, ulong beatmapID, int limit = 10)
+        public List<BanchoScore> GetScores(string username, ulong beatmapID, int limit = 10)
         {
             using (WebClient wc = new WebClient())
             {
                 string json = wc.DownloadString($"https://osu.ppy.sh/api/get_scores?k={apiKey}&b={beatmapID}&u={username}&m=0&limit={limit}&type=string");
-                return JsonConvert.DeserializeObject<List<ScoreResult>>(json);
+                return JsonConvert.DeserializeObject<List<BanchoScore>>(json);
             }
         }
 
-        public class User
+        public class BanchoUser
         {
             [JsonProperty("playcount")]
             public int Playcount;
@@ -83,7 +83,7 @@ namespace OsuPlugin
             public float PP;
         }
 
-        public class ScoreResult
+        public class BanchoScore
         {
             [JsonProperty("score_id")]
             public ulong ScoreID;
@@ -121,7 +121,7 @@ namespace OsuPlugin
             public int ReplayAvailable;
         }
 
-        public class BestPlayResult
+        public class BanchoBestScore
         {
             [JsonProperty("beatmap_id")]
             public ulong BeatmapID;
@@ -159,7 +159,7 @@ namespace OsuPlugin
             public int ReplayAvailable;
         }
 
-        public class RecentPlayResult
+        public class BanchoRecentScore
         {
             [JsonProperty("beatmap_id")]
             public ulong BeatmapID;

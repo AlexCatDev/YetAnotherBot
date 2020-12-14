@@ -8,13 +8,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Reflection;
 
 namespace OsuPlugin
 {
     public class OsuPlugin : IBotPlugin
     {
-        public string PluginName => "osu! Plugin";
+        public string PluginName => "osu! Plugin 1.1";
 
         public string PluginDescription => "I do osu! stuff";
 
@@ -23,7 +24,9 @@ namespace OsuPlugin
 
         private Dictionary<ulong, ulong> discordChannelToBeatmap = new Dictionary<ulong, ulong>();
 
-        private Dictionary<ulong, List<OsuAPI.BestPlayResult>> discordChannelToBeatmapTop = new Dictionary<ulong, List<OsuAPI.BestPlayResult>>();
+        private Dictionary<ulong, List<BanchoAPI.BanchoBestScore>> discordChannelToBeatmapTop = new Dictionary<ulong, List<BanchoAPI.BanchoBestScore>>();
+
+        private BanchoAPI oApi;
 
         /// <summary>
         /// TODO: Format PP and Acc with {0:.00}, always show two decimal places..
@@ -31,7 +34,7 @@ namespace OsuPlugin
 
         public OsuPlugin()
         {
-            OsuAPI oApi = new OsuAPI(Credentials.OSU_API_KEY);
+            oApi = new BanchoAPI(Credentials.OSU_API_KEY);
 
             if (File.Exists("./OsuUsers"))
             {
@@ -43,9 +46,9 @@ namespace OsuPlugin
             {
                 Logger.Log($"Couldn't find a OsuUsers file!", LogLevel.Warning);
             }
-
+            
             //Optimized
-            CommandHandler.AddCommand(">rs", (msg, sMsg) =>
+            CommandHandler.AddCommand(">rs", "Shows recent plays for user", (msg, sMsg) =>
             {
                 Stopwatch sw = Stopwatch.StartNew();
 
@@ -91,7 +94,7 @@ namespace OsuPlugin
 
                 try
                 {
-                    List<OsuAPI.RecentPlayResult> recentUserPlays = oApi.GetRecentPlays(userToCheck, 20);
+                    List<BanchoAPI.BanchoRecentScore> recentUserPlays = oApi.GetRecentPlays(userToCheck, 20);
 
                     if (recentUserPlays.Count == 0)
                     {
@@ -154,6 +157,7 @@ namespace OsuPlugin
                         temp += $"**{count}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(rup.BeatmapID.ToString())}) **+{rup.EnabledMods.ToFriendlyString()}** [{stars}★]\n";
                         temp += $"▸ {Utils.GetEmoteForRankLetter(rup.RankLetter)} ▸ **{pp}PP** ({ppFC}PP for {accFC}% FC) ▸ {acc}%\n";
                         temp += $"▸ {rup.Score} ▸ x{rup.MaxCombo}/{result.MaxCombo} ▸ [{rup.Count300}/{rup.Count100}/{rup.Count50}/{rup.CountMiss}]\n";
+                        temp += $"▸ **AR:** {result.AR} **OD:** {result.OD} **HP:** {result.HP} **CS:** {result.CS} ▸ **BPM:** {result.BPM}\n";
                         temp += mapCompletion;
                         temp += $"▸ Score set {Utils.FormatTime(DateTime.UtcNow - rup.DateOfPlay)}\n";
 
@@ -191,8 +195,154 @@ namespace OsuPlugin
                     sMsg.Channel.SendMessageAsync("uh oh something happend check console");
                 }
             });
+            //Optimized
+            CommandHandler.AddCommand(">rsall", "Shows recent plays for user", (msg, sMsg) =>
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+
+                if (sMsg.MentionedUsers.Count > 0)
+                {
+                    sMsg.Channel.SendMessageAsync("Really? Please don't tag people, just you their osu username. Thanks");
+                    return;
+                }
+
+                if (!discordUserToOsuUser.ContainsKey(sMsg.Author.Id))
+                {
+                    sMsg.Channel.SendMessageAsync("You haven't set a profile, do >set <your_osu_name> to set your osu user");
+                    return;
+                }
+
+                string userToCheck = "";
+
+                string[] args = sMsg.Content.Split(' ');
+
+                if (args.Length > 1)
+                {
+                   userToCheck = args[1];
+                }
+
+                if (userToCheck == "")
+                    userToCheck = discordUserToOsuUser[sMsg.Author.Id];
+
+                Pages recentPlaysPages = new Pages();
+
+                string description = "";
+                Logger.Log($"getting recent plays for '{userToCheck}'", LogLevel.Info);
+
+                try
+                {
+                    List<BanchoAPI.BanchoRecentScore> recentUserPlays = oApi.GetRecentPlays(userToCheck, 100);
+
+                    if (recentUserPlays.Count == 0)
+                    {
+                        sMsg.Channel.SendMessageAsync($"**{userToCheck} don't have any recent plays** <:sadChamp:593405356864962560>");
+                        return;
+                    }
+
+                    if (discordChannelToBeatmap.ContainsKey(sMsg.Channel.Id))
+                        discordChannelToBeatmap[sMsg.Channel.Id] = recentUserPlays[0].BeatmapID;
+                    else
+                        discordChannelToBeatmap.Add(sMsg.Channel.Id, recentUserPlays[0].BeatmapID);
+
+                    int count = 0;
+                    int beatmapSetID = 0;
+
+                    foreach (var rup in recentUserPlays)
+                    {
+                        count++;
+
+                        string map = Utils.DownloadBeatmap(rup.BeatmapID.ToString());
+
+                        if (beatmapSetID == 0)
+                            beatmapSetID = Utils.FindBeatmapSetID(map);
+
+                        EZPPResult result = EZPP.Calculate(map, rup.MaxCombo, rup.Count100,
+                        rup.Count50, rup.CountMiss, rup.EnabledMods);
+
+                        float pp = MathF.Round(result.PP, 2);
+                        float stars = MathF.Round(result.StarRating, 2);
+                        float acc = MathF.Round(result.Accuracy, 2);
+
+                        float objectsEncountered = rup.Count300 + rup.Count100 + rup.Count50 + rup.CountMiss;
+                        float percentage100 = ((float)rup.Count100 + rup.CountMiss) / objectsEncountered;
+                        float percentage50 = rup.Count50 / objectsEncountered;
+                        int expected100 = (int)(result.TotalHitObjects * percentage100);
+                        int expected50 = (int)(result.TotalHitObjects * percentage50);
+
+
+                        EZPPResult resultFC = EZPP.Calculate(map, result.MaxCombo, expected100, expected50, 0, rup.EnabledMods);
+
+                        float ppFC = MathF.Round(resultFC.PP, 2);
+                        float accFC = MathF.Round(resultFC.Accuracy, 2);
+
+                        string temp = "";
+
+                        string mapCompletion = "";
+
+                        if (rup.RankLetter == "F")
+                        {
+                            float total = rup.Count300 + rup.Count100 + rup.Count50 + rup.CountMiss;
+
+                            acc = MathF.Round((300f * rup.Count300 + 100f * rup.Count100 + 50f * rup.Count50) / (300f * total) * 100f, 2);
+
+                            float mapCompleted = (total / (result.TotalHitObjects + 1f) * 100f);
+                            mapCompleted = MathF.Round(mapCompleted, 2);
+
+                            mapCompletion += $"▸ **Map Completion:** {mapCompleted}%\n";
+                        }
+
+                        temp += $"**{count}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(rup.BeatmapID.ToString())}) **+{rup.EnabledMods.ToFriendlyString()}** [{stars}★]\n";
+                        temp += $"▸ {Utils.GetEmoteForRankLetter(rup.RankLetter)} ▸ **{pp}PP** ({ppFC}PP for {accFC}% FC) ▸ {acc}%\n";
+                        temp += $"▸ {rup.Score} ▸ x{rup.MaxCombo}/{result.MaxCombo} ▸ [{rup.Count300}/{rup.Count100}/{rup.Count50}/{rup.CountMiss}]\n";
+                        temp += $"▸ **AR:** {result.AR} **OD:** {result.OD} **HP:** {result.HP} **CS:** {result.CS} ▸ **BPM:** {result.BPM}\n";
+                        temp += mapCompletion;
+                        temp += $"▸ Score set {Utils.FormatTime(DateTime.UtcNow - rup.DateOfPlay)}\n";
+
+                        if (temp.Length + description.Length < 2048)
+                        {
+                            description += temp;
+                        }
+                        else
+                        {
+                            EmbedBuilder embedBuilder = new EmbedBuilder();
+
+                            embedBuilder.WithThumbnailUrl(Utils.GetBeatmapImageUrl(beatmapSetID.ToString()));
+                            embedBuilder.WithAuthor($"Recent Plays for {userToCheck}", Utils.GetProfileImageUrl(recentUserPlays[0].UserID.ToString()));
+
+                            embedBuilder.WithDescription(description);
+
+                            //embedBuilder.WithFooter($"Plays shown: {count} [{(int)(((float)sw.ElapsedTicks / Stopwatch.Frequency) * 1000f)} MS]");
+
+                            embedBuilder.WithColor(new Color(Utils.GetRandomNumber(0, 255), Utils.GetRandomNumber(0, 255), Utils.GetRandomNumber(0, 255)));
+                            recentPlaysPages.AddContent(embedBuilder);
+
+                            description = "";
+                            description +=temp;
+                        }
+                    }
+
+                    PagesHandler.SendPages(sMsg.Channel, recentPlaysPages);
+                    /*
+                    embedBuilder.WithThumbnailUrl(Utils.GetBeatmapImageUrl(beatmapSetID.ToString()));
+                    embedBuilder.WithAuthor($"Recent Plays for {userToCheck}", Utils.GetProfileImageUrl(recentUserPlays[0].UserID.ToString()));
+
+                    embedBuilder.WithDescription(description);
+
+                    embedBuilder.WithFooter($"Plays shown: {count} [{(int)(((float)sw.ElapsedTicks / Stopwatch.Frequency) * 1000f)} MS]");
+
+                    embedBuilder.WithColor(new Color(Utils.GetRandomNumber(0, 255), Utils.GetRandomNumber(0, 255), Utils.GetRandomNumber(0, 255)));
+
+                    sMsg.Channel.SendMessageAsync("", false, embedBuilder.Build());
+                    */
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log(ex.StackTrace, LogLevel.Error);
+                    sMsg.Channel.SendMessageAsync("uh oh something happend check console");
+                }
+            });
             //Kinda optimized
-            CommandHandler.AddCommand(">top", (msg, sMsg) =>
+            CommandHandler.AddCommand(">top", "Shows top plays for user", (msg, sMsg) =>
             {
                 Stopwatch sw = Stopwatch.StartNew();
 
@@ -237,11 +387,11 @@ namespace OsuPlugin
 
                 try
                 {
-                    List<OsuAPI.BestPlayResult> bestUserPlays = oApi.GetBestPlays(userToCheck);
+                    List<BanchoAPI.BanchoBestScore> bestUserPlays = oApi.GetBestPlays(userToCheck);
 
-                    List<OsuAPI.BestPlayResult> bestRecentUserPlays = new List<OsuAPI.BestPlayResult>(bestUserPlays);
+                    List<BanchoAPI.BanchoBestScore> bestRecentUserPlays = new List<BanchoAPI.BanchoBestScore>(bestUserPlays);
 
-                    OsuAPI.User osuUser = oApi.GetUser(userToCheck)[0];
+                    BanchoAPI.BanchoUser osuUser = oApi.GetUser(userToCheck)[0];
 
                     if (showRecent)
                         bestRecentUserPlays.Sort((x, y) => DateTime.Compare(y.DateOfPlay, x.DateOfPlay));
@@ -254,7 +404,7 @@ namespace OsuPlugin
 
                     for (int i = 0; i < 20; i++)
                     {
-                        OsuAPI.BestPlayResult currentPlay;
+                        BanchoAPI.BanchoBestScore currentPlay;
 
                         if (showRecent)
                         {
@@ -311,7 +461,7 @@ namespace OsuPlugin
                 }
             });
 
-            CommandHandler.AddCommand(">set", (msg, sMsg) =>
+            CommandHandler.AddCommand(">set", "Sets your osu user", (msg, sMsg) =>
             {
                 string[] user = sMsg.Content.Split(' ');
                 if (user.Length > 1)
@@ -327,7 +477,7 @@ namespace OsuPlugin
             });
 
             //Optimized
-            CommandHandler.AddCommand(">c", (msg, sMsg) =>
+            CommandHandler.AddCommand(">c", "Compares plays for user", (msg, sMsg) =>
             {
                 Stopwatch sw = Stopwatch.StartNew();
 
@@ -365,15 +515,13 @@ namespace OsuPlugin
 
                 try
                 {
-                    List<OsuAPI.ScoreResult> userPlays = oApi.GetScores(userToCheck, discordChannelToBeatmap[sMsg.Channel.Id]);
+                    List<BanchoAPI.BanchoScore> userPlays = oApi.GetScores(userToCheck, discordChannelToBeatmap[sMsg.Channel.Id]);
 
                     if (userPlays.Count == 0)
                     {
                         sMsg.Channel.SendMessageAsync($"**{userToCheck} don't have any plays on this map** <:sadChamp:593405356864962560>");
                         return;
                     }
-
-                    embedBuilder.WithAuthor($"Top osu! Plays for {userToCheck}", Utils.GetProfileImageUrl(userPlays[0].UserID.ToString()));
 
                     string map = Utils.DownloadBeatmap(discordChannelToBeatmap[sMsg.Channel.Id].ToString());
 
@@ -386,9 +534,11 @@ namespace OsuPlugin
                     {
                         EZPPResult result = EZPP.Calculate(map, play.MaxCombo, play.Count100, play.Count50, play.CountMiss, play.EnabledMods);
 
+                        embedBuilder.WithAuthor($"Top osu! Plays for {userToCheck} on {result.SongName} [{result.DifficultyName}]", Utils.GetProfileImageUrl(userPlays[0].UserID.ToString()), $"{Utils.GetBeatmapUrl(discordChannelToBeatmap[sMsg.Channel.Id].ToString())}");
+
                         string tempDescription = "";
 
-                        tempDescription += $"**{++count}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(discordChannelToBeatmap[sMsg.Channel.Id].ToString())}) **+{play.EnabledMods.ToFriendlyString()}** [{Math.Round(result.StarRating, 2)}★]\n";
+                        tempDescription += $"**{++count}.** **+{play.EnabledMods.ToFriendlyString()}** [{Math.Round(result.StarRating, 2)}★]\n";
                         tempDescription += $"▸ {Utils.GetEmoteForRankLetter(play.RankLetter)} ▸ **{Math.Round(result.PP, 2)}pp** ▸ {Math.Round(result.Accuracy, 2)}%\n";
                         tempDescription += $"▸ {play.Score} ▸ x{play.MaxCombo}/{result.MaxCombo} ▸ [{play.Count300}/{play.Count100}/{play.Count50}/{play.CountMiss}]\n";
                         tempDescription += $"▸ Score Set {Utils.FormatTime(DateTime.UtcNow - play.DateOfPlay)}\n";
@@ -413,7 +563,7 @@ namespace OsuPlugin
                 }
             });
             //Kinda deprecated by >match
-            CommandHandler.AddCommand(">flex", (msg, sMsg) =>
+            CommandHandler.AddCommand(">flex", "Compares a specific play from another users top play", (msg, sMsg) =>
             {
                 if (sMsg.MentionedUsers.Count > 0)
                 {
@@ -471,9 +621,9 @@ namespace OsuPlugin
 
                 try
                 {
-                    OsuAPI.User osuUser = oApi.GetUser(userToCheck).First();
+                    BanchoAPI.BanchoUser osuUser = oApi.GetUser(userToCheck).First();
 
-                    List<OsuAPI.ScoreResult> userPlay = oApi.GetScores(userToCheck, beatmapToCheck);
+                    List<BanchoAPI.BanchoScore> userPlay = oApi.GetScores(userToCheck, beatmapToCheck);
 
                     if (userPlay.Count == 0)
                     {
@@ -532,7 +682,7 @@ namespace OsuPlugin
             });
 
             //Optimized
-            CommandHandler.AddCommand(">osu", (msg, sMsg) =>
+            CommandHandler.AddCommand(">osu", "Shows your osu profile or someone elses", (msg, sMsg) =>
             {
                 if (sMsg.MentionedUsers.Count > 0)
                 {
@@ -557,7 +707,7 @@ namespace OsuPlugin
 
                 try
                 {
-                    OsuAPI.User user = oApi.GetUser(userToCheck).First();
+                    BanchoAPI.BanchoUser user = oApi.GetUser(userToCheck).First();
 
                     EmbedBuilder embedBuilder = new EmbedBuilder();
 
@@ -578,7 +728,7 @@ namespace OsuPlugin
                 }
             });
             //Optimized
-            CommandHandler.AddCommand(">match", (msg, sMsg) =>
+            CommandHandler.AddCommand(">match", "Matches your top plays with someone elses", (msg, sMsg) =>
             {
                 Stopwatch sw = Stopwatch.StartNew();
 
@@ -608,12 +758,12 @@ namespace OsuPlugin
 
                 try
                 {
-                    List<OsuAPI.BestPlayResult> firstTopPlays = oApi.GetBestPlays(discordUserToOsuUser[sMsg.Author.Id]);
-                    List<OsuAPI.BestPlayResult> secondTopPlays = oApi.GetBestPlays(userToCheck);
+                    List<BanchoAPI.BanchoBestScore> firstTopPlays = oApi.GetBestPlays(discordUserToOsuUser[sMsg.Author.Id]);
+                    List<BanchoAPI.BanchoBestScore> secondTopPlays = oApi.GetBestPlays(userToCheck);
 
-                    OsuAPI.User firstUser = oApi.GetUser(discordUserToOsuUser[sMsg.Author.Id]).First();
+                    BanchoAPI.BanchoUser firstUser = oApi.GetUser(discordUserToOsuUser[sMsg.Author.Id]).First();
 
-                    OsuAPI.User secondUser = oApi.GetUser(userToCheck).First();
+                    BanchoAPI.BanchoUser secondUser = oApi.GetUser(userToCheck).First();
 
                     EmbedBuilder embedBuilder = new EmbedBuilder();
 
@@ -631,7 +781,7 @@ namespace OsuPlugin
                         {
                             count++;
 
-                            OsuAPI.BestPlayResult currentBestPlay = firstTopPlays[i];
+                            BanchoAPI.BanchoBestScore currentBestPlay = firstTopPlays[i];
 
                             string dateText = Utils.FormatTime(DateTime.UtcNow - currentBestPlay.DateOfPlay);
 
@@ -643,7 +793,7 @@ namespace OsuPlugin
 
                             tempDescription += $"**{count}.** [**{result.SongName} [{result.DifficultyName}]**]({Utils.GetBeatmapUrl(currentBestPlay.BeatmapID.ToString())})\n";
                             tempDescription += $"▸ {Utils.GetEmoteForRankLetter(currentBestPlay.RankLetter)} ▸ **{Math.Round(currentBestPlay.PP, 2)}pp** ▸ {Math.Round(result.Accuracy, 2)}% **+{currentBestPlay.EnabledMods.ToFriendlyString()}** [{Math.Round(result.StarRating, 2)}★] ▸ **#{i + 1}**\n";
-                            tempDescription += $"▸ {currentBestPlay.Score} ▸ x{currentBestPlay.MaxCombo}/{currentBestPlay.MaxCombo} ▸ [{currentBestPlay.Count300}/{currentBestPlay.Count100}/{currentBestPlay.Count50}/{currentBestPlay.CountMiss}]\n";
+                            tempDescription += $"▸ {currentBestPlay.Score} ▸ x{currentBestPlay.MaxCombo}/{result.MaxCombo} ▸ [{currentBestPlay.Count300}/{currentBestPlay.Count100}/{currentBestPlay.Count50}/{currentBestPlay.CountMiss}]\n";
                             tempDescription += $"▸ Score Set {dateText}\n";
 
                             tempDescription += $"▸ **VS**\n";
@@ -657,7 +807,7 @@ namespace OsuPlugin
                             result = EZPP.Calculate(map, currentBestPlay.MaxCombo, currentBestPlay.Count100, currentBestPlay.Count50, currentBestPlay.CountMiss, currentBestPlay.EnabledMods);
 
                             tempDescription += $"▸ {Utils.GetEmoteForRankLetter(currentBestPlay.RankLetter)} ▸ **{Math.Round(currentBestPlay.PP, 2)}pp** ▸ {Math.Round(result.Accuracy, 2)}% **+{currentBestPlay.EnabledMods.ToFriendlyString()}** [{Math.Round(result.StarRating, 2)}★] ▸ **#{index + 1}**\n";
-                            tempDescription += $"▸ {currentBestPlay.Score} ▸ x{currentBestPlay.MaxCombo}/{currentBestPlay.MaxCombo} ▸ [{currentBestPlay.Count300}/{currentBestPlay.Count100}/{currentBestPlay.Count50}/{currentBestPlay.CountMiss}]\n";
+                            tempDescription += $"▸ {currentBestPlay.Score} ▸ x{currentBestPlay.MaxCombo}/{result.MaxCombo} ▸ [{currentBestPlay.Count300}/{currentBestPlay.Count100}/{currentBestPlay.Count50}/{currentBestPlay.CountMiss}]\n";
                             tempDescription += $"▸ Score Set {dateText}\n";
 
                             tempDescription += "\n";
@@ -685,16 +835,17 @@ namespace OsuPlugin
                     sMsg.Channel.SendMessageAsync("uh oh something happend check console");
                 }
             });
-
+    
             //Optimized
-            CommandHandler.AddCommand(">api", (msg, sMsg) =>
+            CommandHandler.AddCommand(">api", "Shows api information", (msg, sMsg) =>
             {
                 EmbedBuilder embedBuilder = new EmbedBuilder();
 
                 embedBuilder.WithAuthor($"osu!API");
 
-                embedBuilder.Description = $"Total API Calls {oApi.TotalAPICalls}";
-
+                embedBuilder.Description += $"**Total API Calls:** {oApi.TotalAPICalls}\n";
+                embedBuilder.Description += $"**Cached Beatmaps:** {Utils.CachedBeatmapCount}\n";
+                embedBuilder.Description += $"**Beatmap Memory Caching:** {Utils.BeatmapCachingEnabled}\n";
 
                 sMsg.Channel.SendMessageAsync("", false, embedBuilder.Build());
             });
@@ -707,14 +858,7 @@ namespace OsuPlugin
 
         public void Unloading()
         {
-            CommandHandler.RemoveCommand(">api");
-            CommandHandler.RemoveCommand(">rs");
-            CommandHandler.RemoveCommand(">top");
-            CommandHandler.RemoveCommand(">set");
-            CommandHandler.RemoveCommand(">c");
-            CommandHandler.RemoveCommand(">flex");
-            CommandHandler.RemoveCommand(">match");
-            CommandHandler.RemoveCommand(">osu");
+
         }
     }
 }

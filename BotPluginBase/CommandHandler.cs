@@ -6,41 +6,44 @@ using System.Text;
 
 namespace BotPluginBase
 {
+
     public static class CommandHandler
     {
         public class Command
         {
-            public string Description { get; set; } = "null";
-            public string CommandString { get; set; }
-            public Action<string, SocketMessage> OnCommand { get; set; }
+            public string Description;
+            public CommandCallBack CommandCallBack;
+
+            public bool IsActive => CommandCallBack != null;
         }
 
-        private static List<Command> commands = new List<Command>();
+        public delegate void CommandCallBack(string[] args, SocketMessage socketMsg);
+
+        private static Dictionary<string, Command> commands = new Dictionary<string, Command>();
 
         public static int ActiveCommands => commands.Count;
 
-        public static IReadOnlyList<Command> Commands => commands.AsReadOnly();
+        public static IReadOnlyList<KeyValuePair<string, Command>> Commands => commands.ToList();
 
-        public static void Handle(SocketMessage msg)
+        public static void AddCommand(string trigger, string description, CommandCallBack cmdCallback)
         {
-            for (int i = 0; i < commands.Count; i++)
+            var command = new Command() { Description = description, CommandCallBack = cmdCallback };
+
+            if (commands.ContainsKey(trigger))
+                commands[trigger] = command;
+            else
+                commands.Add(trigger, command);
+        }
+
+        public static void Handle(SocketMessage socketMsg)
+        {
+            string[] args = socketMsg.Content.ToLower().Split(' ');
+
+            Command cmd;
+            if (commands.TryGetValue(args[0].ToLower(), out cmd))
             {
-                if (msg.Content.ToLower().StartsWith(commands[i].CommandString))
-                {
-                    commands[i].OnCommand?.Invoke(msg.Content.Remove(0, commands[i].CommandString.Length), msg);
-                    break;
-                }
+                cmd.CommandCallBack?.Invoke(args, socketMsg);
             }
-        }
-
-        public static void AddCommand(string commandString, Action<string, SocketMessage> onMessage)
-        {
-            commands.Add(new Command() { CommandString = commandString, OnCommand = onMessage });
-        }
-
-        public static void RemoveCommand(string commandString)
-        {
-            commands.RemoveAll(a=>a.CommandString == commandString);
         }
     }
 }

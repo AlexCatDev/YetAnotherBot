@@ -16,6 +16,8 @@ namespace OsuPlugin
 
         private static Dictionary<string, string> cachedBeatmaps = new Dictionary<string, string>();
 
+        public static int CachedBeatmapCount => cachedBeatmaps.Count;
+
         private static Random rng = new Random();
 
         public static int GetRandomNumber(int min, int max)
@@ -35,32 +37,26 @@ namespace OsuPlugin
 
         public static string DownloadBeatmap(string beatmapID)
         {
-            if (BeatmapCachingEnabled)
+            string beatmap = "";
+            if (cachedBeatmaps.TryGetValue(beatmapID, out beatmap))
             {
-
-                if (cachedBeatmaps.ContainsKey(beatmapID))
-                    return cachedBeatmaps[beatmapID];
-                else
-                {
-                    using (WebClient wc = new WebClient())
-                    {
-                        string map = wc.DownloadString($"https://osu.ppy.sh/osu/{beatmapID}");
-                        cachedBeatmaps.Add(beatmapID, map);
-                        return map;
-                    }
-                }
+                return beatmap;
             }
             else
             {
                 using (WebClient wc = new WebClient())
                 {
-                    string map = wc.DownloadString($"https://osu.ppy.sh/osu/{beatmapID}");
-                    return map;
+                    beatmap = wc.DownloadString($"https://osu.ppy.sh/osu/{beatmapID}");
+
+                    if(BeatmapCachingEnabled)
+                        cachedBeatmaps.Add(beatmapID, beatmap);
+
+                    return beatmap;
                 }
             }
         }
 
-        public static string GetProfileImageUrl(string userID) => $"https://a.ppy.sh/{userID}?1598573706.jpeg";
+        public static string GetProfileImageUrl(string userID) => $"https://a.ppy.sh/{userID}?{GetRandomNumber(1, 36487264)}.jpeg";
         public static string GetBeatmapImageUrl(string beatmapSetID) => $"https://b.ppy.sh/thumb/{beatmapSetID}l.jpg";
         public static string GetFlagImageUrl(string country) => $"https://osu.ppy.sh/images/flags/{country}.png";
 
@@ -79,10 +75,14 @@ namespace OsuPlugin
                 beatmapset += mapData[offset++];
             }
 
-            return int.Parse(beatmapset);
+            int result = 0;
+            if (int.TryParse(beatmapset, out result))
+                return result;
+            else
+                return 0;
         }
 
-        public static void LazyAdd(this Dictionary<ulong, List<OsuAPI.BestPlayResult>> dict, ulong key, List<OsuAPI.BestPlayResult> value)
+        public static void LazyAdd(this Dictionary<ulong, List<BanchoAPI.BanchoBestScore>> dict, ulong key, List<BanchoAPI.BanchoBestScore> value)
         {
             if (dict.ContainsKey(key))
             {

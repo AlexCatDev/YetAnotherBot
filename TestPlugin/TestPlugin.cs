@@ -32,6 +32,13 @@ namespace TestPlugin
                 return true;
             }
 
+            if (args[0].ToLower() == "--fakeping")
+            {
+                msg.Channel.SendMessageAsync("Kill yourself retard");
+                return true;
+            }
+
+
             if (args[0].ToLower() == "test")
             {
                 msg.Channel.SendMessageAsync("Hi!");

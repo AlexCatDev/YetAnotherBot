@@ -9,11 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YetAnotherBot", "YetAnother
 		{2B7BE160-C351-4079-9382-8AD89A9EC23E} = {2B7BE160-C351-4079-9382-8AD89A9EC23E}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotPluginBase", "BotPluginBase\BotPluginBase.csproj", "{4CB11EFD-1E11-45B8-8836-47F6496379D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BotPluginBase", "BotPluginBase\BotPluginBase.csproj", "{4CB11EFD-1E11-45B8-8836-47F6496379D5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestPlugin", "TestPlugin\TestPlugin.csproj", "{2B7BE160-C351-4079-9382-8AD89A9EC23E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestPlugin", "TestPlugin\TestPlugin.csproj", "{2B7BE160-C351-4079-9382-8AD89A9EC23E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuPlugin", "OsuPlugin\OsuPlugin.csproj", "{06A3F30A-13B3-4E92-9B23-32BB038B0FEA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OsuPlugin", "OsuPlugin\OsuPlugin.csproj", "{06A3F30A-13B3-4E92-9B23-32BB038B0FEA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

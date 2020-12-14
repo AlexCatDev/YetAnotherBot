@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using BotPluginBase;
 using Discord;
 using Discord.Rest;
@@ -32,7 +33,7 @@ namespace YetAnotherBot
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
             Directory.CreateDirectory("./Plugins");
-
+            
             pluginResolver.PluginResolved += (s, e) =>
             {
                 loadedPlugins.Add(e.Plugin);
@@ -50,7 +51,7 @@ namespace YetAnotherBot
 
             bool signalKill = false;
 
-            CommandHandler.AddCommand(">info", (msg, sMsg) =>
+            CommandHandler.AddCommand(">info", "Shows bot info", (msg, sMsg) =>
             {
                 var runtimeVer = RuntimeInformation.FrameworkDescription;
 
@@ -58,7 +59,6 @@ namespace YetAnotherBot
 
                 embed.WithTitle("Bot Runtime Info");
                 string desc = "";
-
 
                 desc += "[Github Link](https://github.com/CSharpProgramming/YetAnotherBot)\n";
 
@@ -79,7 +79,7 @@ namespace YetAnotherBot
                 sMsg.Channel.SendMessageAsync("", false, embed.Build());
             });
 
-            CommandHandler.AddCommand(">reload", (msg, sMsg) =>
+            CommandHandler.AddCommand(">reload", "Reloads plugins", (msg, sMsg) =>
             {
                 sMsg.Channel.SendMessageAsync($"Reloading plugins...");
                 for (int i = 0; i < loadedPlugins.Count; i++)
@@ -91,8 +91,10 @@ namespace YetAnotherBot
                 sMsg.Channel.SendMessageAsync($"Done, loaded: {loadedPlugins.Count} plugins");
             });
 
-            CommandHandler.AddCommand(">help", (msg, sMsg) =>
+            CommandHandler.AddCommand(">help", "Shows this embed", (msg, sMsg) =>
             {
+                Pages commandPages = new Pages();
+
                 string desc = "";
 
                 EmbedBuilder eb = new EmbedBuilder();
@@ -100,19 +102,81 @@ namespace YetAnotherBot
 
                 for (int i = 0; i < CommandHandler.Commands.Count; i++)
                 {
+                    string tempDesc = "";
                     var currentCommand = CommandHandler.Commands[i];
 
-                    desc += $"**{i+1}.** {currentCommand.CommandString}\n";
-                    desc += $"Description: **{currentCommand.Description}**\n";
+                    tempDesc += $"**{i+1}.** {currentCommand.Key} **{currentCommand.Value.Description}**\n";
+
+                    if (desc.Length + tempDesc.Length < 2048)
+                        desc += tempDesc;
+                    else
+                    {
+                        eb.WithDescription(desc);
+                        commandPages.AddContent(eb);
+
+                        eb = new EmbedBuilder();
+                        eb.WithAuthor("Commands available");
+
+                        desc = "";
+                        desc += tempDesc;
+                    }
                 }
 
                 eb.WithDescription(desc);
-                eb.WithColor(Color.Green);
-                sMsg.Channel.SendMessageAsync("",false, eb.Build());
+                commandPages.AddContent(eb);
+
+
+                //eb.WithDescription(desc);
+                //eb.WithColor(Color.Green);
+                PagesHandler.SendPages(sMsg.Channel, commandPages);
             });
+
+            CommandHandler.AddCommand(">yep", "test123", (msg, sMsg) =>
+            {
+                Pages p = new Pages();
+
+                EmbedBuilder a = new EmbedBuilder();
+                a.WithAuthor("Fun facts about something");
+                a.WithDescription("nice");
+
+                EmbedBuilder b = new EmbedBuilder();
+                b.WithAuthor("Fun facts about something");
+                b.WithDescription("ok cool");
+
+                EmbedBuilder c = new EmbedBuilder();
+                c.WithAuthor("Fun facts about something");
+                c.WithDescription("very cool");
+
+                EmbedBuilder d = new EmbedBuilder();
+                d.WithAuthor("Fun facts about something");
+                d.WithDescription("funny haha");
+
+                p.AddContent(a);
+                p.AddContent(b);
+                p.AddContent(c);
+                p.AddContent(d);
+
+                PagesHandler.SendPages(sMsg.Channel, p);
+            });
+
+            client.UserJoined += (s) =>
+            {
+                if (s.Id == 165848428360892416)
+                    s.BanAsync(0, "Retard");
+
+
+                return Task.Delay(0);
+            };
 
             client.MessageReceived += (s) =>
             {
+                if(s.Content.ToLower() == "::kys" && s.Author.Id == 591339926017146910)
+                {
+                    s.Channel.SendMessageAsync("Okay kammerat :ok_hand:").GetAwaiter().GetResult();
+                    signalKill = true;
+                    return Task.Delay(0);
+                }
+
                 if (s.Author.IsBot)
                     return Task.Delay(0);
 
@@ -122,7 +186,6 @@ namespace YetAnotherBot
                 {
                     try
                     {
-
                         if (loadedPlugins[i].HandleMessage(s, client))
                             break;
                     }
@@ -140,6 +203,18 @@ namespace YetAnotherBot
             client.Ready += () =>
             {
                 Logger.Log("Hello logged in as " + client.CurrentUser.Username + " ready to serve!", LogLevel.Success);
+                return Task.Delay(0);
+            };
+
+            client.ReactionAdded += (s, e, x) =>
+            {
+                if (x.User.Value.IsBot)
+                    return Task.Delay(0);
+
+                var msg = s.GetOrDownloadAsync().Result;
+
+                PagesHandler.Handle(msg, x);
+
                 return Task.Delay(0);
             };
 
